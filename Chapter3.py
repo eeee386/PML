@@ -10,6 +10,11 @@ from LogisticRegression import LogisticRegressionGD
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.linear_model import SGDClassifier
+from sklearn.tree import DecisionTreeClassifier, export_graphviz
+# from pydotplus import graph_from_dot_data
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+
 
 iris = datasets.load_iris()
 X = iris.data[:, [2, 3]]
@@ -109,13 +114,12 @@ print(lr.predict_proba(X_test_std[:3, :]))
 print(lr.predict_proba(X_test_std[:3, :]).argmax(axis=1))
 print(lr.predict(X_test_std[:3, :]))
 
-
 weights, params = [], []
 for c in np.arange(-5, 5):
-    lr = LogisticRegression(C=10.**c, random_state=1)
+    lr = LogisticRegression(C=10. ** c, random_state=1)
     lr.fit(X_train_std, y_train)
     weights.append(lr.coef_[1])
-    params.append(10.**c)
+    params.append(10. ** c)
 
 weights = np.array(weights)
 plt.plot(params, weights[:, 0], label='petal length')
@@ -126,7 +130,6 @@ plt.legend(loc='upper left')
 plt.xscale('log')
 plt.show()
 
-
 svm = SVC(kernel='linear', C=1.0, random_state=1)
 svm.fit(X_train_std, y_train)
 plot_decision_regions_ch3(X_combined_std, y_combined, classifier=svm, test_idx=range(105, 150))
@@ -135,5 +138,71 @@ plt.ylabel('petal width (standardized)')
 plt.legend(loc='upper left')
 plt.show()
 
+ppn = SGDClassifier(loss='perceptron')
+lr = SGDClassifier(loss='log')
+svm = SGDClassifier(loss='hinge')
 
+np.random.seed(1)
+X_xor = np.random.randn(200, 2)
+y_xor = np.logical_xor(X_xor[:, 0] > 0, X_xor[:, 1] > 0)
+y_xor = np.where(y_xor, 1, -1)
+plt.scatter(X_xor[y_xor == 1, 0], X_xor[y_xor == 1, 1], c='b', marker='s', label='1')
+plt.scatter(X_xor[y_xor == -1, 0], X_xor[y_xor == -1, 1], c='r', marker='s', label='-1')
+plt.xlim([-3, 3])
+plt.ylim([-3, 3])
+plt.legend(loc='best')
+plt.show()
+
+svmRBF = SVC(kernel='rbf', random_state=1, gamma=100.0, C=10.0)
+svmRBF.fit(X_xor, y_xor)
+plot_decision_regions_ch3(X_xor, y_xor, classifier=svmRBF)
+plt.legend(loc='upper left')
+plt.show()
+
+svmRBF.fit(X_train_std, y_train)
+plot_decision_regions_ch3(X_combined_std, y_combined, classifier=svmRBF, test_idx=range(105, 150))
+plt.xlabel('petal length (standardized)123')
+plt.xlabel('petal width (standardized)')
+plt.legend(loc='upper left')
+plt.show()
+
+tree = DecisionTreeClassifier(criterion='gini', max_depth=3, random_state=1)
+tree.fit(X_train, y_train)
+X_combined = np.vstack((X_train, X_test))
+y_combined = np.hstack((y_train, y_test))
+plot_decision_regions_ch3(X_combined, y_combined, classifier=tree, test_idx=range(105, 150))
+plt.xlabel('petal length (cm)')
+plt.ylabel('petal width (cm)')
+plt.legend(loc='upper left')
+plt.show()
+
+# dot_data = export_graphviz(tree, filled=True, rounded=True, class_names=['Setosa', 'Versicolor', 'Virginica'],
+#                            feature_names=['petal length', 'petal width'], out_file=None)
+# graph = graph_from_dot_data(dot_data)
+# graph.write_png('tree.png')
+
+forest = RandomForestClassifier(criterion='gini',
+                                n_estimators=25,
+                                random_state=1,
+                                n_jobs=2)
+forest.fit(X_train, y_train)
+
+plot_decision_regions_ch3(X_combined, y_combined,
+                      classifier=forest, test_idx=range(105, 150))
+
+plt.xlabel('petal length [cm]')
+plt.ylabel('petal width [cm]')
+plt.legend(loc='upper left')
+plt.tight_layout()
+#plt.savefig('images/03_22.png', dpi=300)
+plt.show()
+
+
+knn = KNeighborsClassifier(n_neighbors=5, p=2, metric='minkowski')
+knn.fit(X_train_std, y_train)
+plot_decision_regions_ch3(X_combined_std, y_combined, classifier=knn, test_idx=range(105, 150))
+plt.xlabel('petal length [cm]')
+plt.ylabel('petal width [cm]')
+plt.legend(loc='upper left')
+plt.show()
 
